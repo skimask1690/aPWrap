@@ -60,6 +60,9 @@ def progress(inpos, outpos, stage, cbparam):
 def compress_data(data: bytes, use_verbose=False) -> bytes:
     size = len(data)
 
+    if size > APLIB_ERROR:
+        raise ValueError(f"Input too large ({size} bytes). Maximum supported size is {APLIB_ERROR} bytes.")
+    
     workmem = LIBRARY.aP_workmem_size(size)
     max_out = LIBRARY.aP_max_packed_size(size)
 
@@ -91,6 +94,10 @@ def compress_file(inp, out, use_verbose=False):
     inp = Path(inp)
     out = Path(out)
 
+    size = inp.stat().st_size
+    if size > APLIB_ERROR:
+        raise ValueError(f"Input too large ({size} bytes). Maximum supported size is {APLIB_ERROR} bytes.")
+
     data = inp.read_bytes()
 
     compressed = compress_data(data, use_verbose)
@@ -115,6 +122,10 @@ def decompress_data(data: bytes, use_verbose=False) -> bytes:
         raise RuntimeError("Invalid compressed data (missing header)")
 
     out_size = int.from_bytes(data[:4], "little")
+
+    if out_size > APLIB_ERROR:
+        raise RuntimeError("Invalid output size in header")
+    
     compressed = data[4:]
 
     if use_verbose:
